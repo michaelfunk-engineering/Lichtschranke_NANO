@@ -74,19 +74,24 @@ long count = 0;
 
 
 //fixed Variables
-// 5 Letter per Row
-char A=0x77; char B=0x7F; char C=0x4E; char D=0x7E; char E=0x4F;
-char F=0x47; char G=0x5E; char H=0x37; char I=0x06; char J=0x3C;
-char L=0x0E;
+// 5 Letter per Row - Capital Letters
+char A=0x77; char B=0x7F; char C=0x4E; char E=0x4F; char F=0x47;
+char G=0x5E; char H=0x37; char I=0x06; char J=0x3C; char L=0x0E;
+char O=0x7E; char P=0x67; char Q=0xFE; char R=0xF7; char S=0x5B;
+char U=0x3E; char V=0x2A; char X=0xB7; char Y=0x27; char Z=0x6D;
+// 5 Letter per Row - small Letters
+char a=0x9D; char b=0x1F; char c=0x0D; char d=0x3D; char h=0x17;
+char i=0x04; char j=0x38; char n=0x15; char o=0x1D; char q=0x73;
+char r=0x05; char u=0x1C; char v=0x14;
 
 char space=0x00;
 
-const int charSetSize = 12;
-const char charSet[charSetSize] = {A,B,C,D,E,F,G,H,I,J,L,space};
+const int charSetSize = 34;
+const char charSet[charSetSize] = {A,B,C,E,F,G,H,I,J,L,O,P,Q,R,S,U,V,X,Y,Z,a,b,c,d,h,i,j,n,o,q,r,u,v,space};
 
-//Words that are commonly used as String of chars
-char stringHALLO[5] = {H,A,L,L,D};
-char stringFLO[3]   = {F,L,D};
+//Words that are commonly used as 'String' of chars
+char stringHALLO[5] = {H,A,L,L,O};
+char stringFLO[3]   = {F,L,O};
 
 
 //Functions
