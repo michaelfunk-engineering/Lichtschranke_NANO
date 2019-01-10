@@ -36,10 +36,10 @@ next steps for the software:
   7. Start Timer with encoder
   8. set startTime when barrier crossed
   9. set stopTime when barrier crossed
-    a. lapTime = stopTime - startTime
-    b. if (Laps left)
-      i. set startTime for Lap_n
-    c. else next Player
+    - lapTime = stopTime - startTime
+    - if (Laps left)
+      - set startTime for Lap_n
+    - else next Player
   10. Show PLayerData - Select with Encoder (N+1 Sites) - EXIT/RESTART on additional Site
 
 
