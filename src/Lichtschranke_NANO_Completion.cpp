@@ -72,6 +72,12 @@ int flag = 0;
 //startWert für Encoder-Drehung
 long count = 0;
 
+//enterHits
+long enterHits = 0;
+
+//Variablen für Lichtschranke
+int litPin = 12;
+
 
 //fixed Variables
 // 5 Letter per Row - Capital Letters
@@ -92,7 +98,47 @@ const char charSet[charSetSize] = {A,B,C,E,F,G,H,I,J,L,O,P,Q,R,S,U,V,X,Y,Z,a,b,c
 //Words that are commonly used as 'String' of chars
 char stringHALLO[5] = {H,A,L,L,O};
 char stringFLO[3]   = {F,L,O};
+char stringLASEr[5] = {L,A,S,E,r};
+char stringCHECK[5] = {C,H,E,C,H};
+char stringPLAYEr[6] = {P,L,A,Y,E,r};
+char stringPLAYERS[7] = {P,L,A,Y,E,R,S};
+char stringLOSEr[5] = {L,O,S,E,r};
+char stringLOS[3] = {L,O,S};
+char stringREADY[5] = {R,E,A,d,Y};
 
+//Daten-Variablen fürs Programm
+int players = 0;
+
+char player0[digitsInUse]; //Name von Spieler 0
+char player1[digitsInUse]; //Name von SPieler 1
+char player2[digitsInUse]; //Name von Spieler 2
+char player3[digitsInUse]; //Name von SPieler 3
+char player4[digitsInUse]; //Name von Spieler 4
+char player5[digitsInUse]; //Name von SPieler 5
+char player6[digitsInUse]; //Name von Spieler 6
+char player7[digitsInUse]; //Name von SPieler 7
+char player8[digitsInUse]; //Name von Spieler 8
+char player9[digitsInUse]; //Name von SPieler 9
+
+long best0 = 11;
+long best1 = 22;
+long best2 = 33;
+long best3 = 44;
+long best4 = 55;
+long best5 = 66;
+long best6 = 77;
+long best7 = 88;
+long best8 = 99;
+long best9 = 12345;
+
+long dailyBest = 0;
+
+volatile int index = 0;
+
+volatile int buttonHits = 0;
+
+//Num always positv, if you need the negative count too use count
+volatile long num = 0;
 
 //Functions
 void spiSendByte (char databyte)
@@ -346,6 +392,11 @@ void MAX7219_displayString(long displaySelect, char string[], long size)
   }
 }
 
+boolean getEnter(){
+    if(digitalRead(keyPin)){ return true; }
+    else
+    {return false;}
+}
 
 int getEncoderValue(){
    x = digitalRead(RoBPin);
@@ -365,11 +416,17 @@ int getEncoderValue(){
       }
     }
 
-    if (count < 0) {return count*(-1);}
-    else{return count;}
+    if (count < 0) {count = charSetSize;}
+    return count%charSetSize;
 }//getEncoderValue
 
+boolean getLit(){
+  boolean lit = true;
+  if(digitalRead(litPin))
+    {lit = false;}
 
+  return lit;
+}
 
 
 void setup() {
@@ -384,7 +441,7 @@ SPCR |= (1 << SPE) | (1 << MSTR)| (1 << SPR1);
 
 // Scan limit runs from 0
 MAX7219_writeData(MAX7219_MODE_SCAN_LIMIT, (digitsInUse) - 1);
-MAX7219_writeData(MAX7219_MODE_INTENSITY, 1);
+MAX7219_writeData(MAX7219_MODE_INTENSITY, 3);
 MAX7219_writeData(MAX7219_MODE_POWER, ON);
 Serial.begin(9600);
 
@@ -399,91 +456,121 @@ pinMode(RoAPin, INPUT);
 pinMode(RoBPin, INPUT);
 pinMode(keyPin, INPUT);
 
-}
+pinMode(litPin, INPUT);
 
-volatile int index = 0;
-
-volatile int buttonHits = 0;
-
-//Num always positv, if you need the negative count too use count
-volatile long num = 0;
-
-char player1[digitsInUse]; //Name von SPieler 1
-char player2[digitsInUse]; //Name von Spieler 2
 
 boolean check = false;
-long zeit1 = 0;
-int zaehler=0;
+
+//Zustand 0 - Lichtkalibrierung
+MAX7219_displayString(1,stringLASEr,5);
+
+  while (!check){
+    if(getLit()){
+      check = true;
+    }
+  }
+
+MAX7219_displayString(2,stringCHECK,5);
+
+long t0 = millis();
+
+for (long i = 3; i > -1; i--) {
+  MAX7219_displayNumber(3,i);
+  while ( (millis()-t0) < 999 ) {}
+  t0 = millis();
+}
+MAX7219_clearDisplay();
 
 
+}//Setup
 
 void loop() {
   // put your main code here, to run repeatedly
 
+Serial.println(millis());
 
 
-Serial.println(zeit1);
+  // Q1: Spieler Anzahl wählen
+  while (enterHits==0) {
+    MAX7219_displayString(1,stringPLAYERS,7);
 
 
-//Phase 1: Zwei Namen wählen
-while(buttonHits < 16){
+    MAX7219_displayNumber(2,getEncoderValue()%11);
 
-  num = getEncoderValue();
+    //ButtonHit Standard Routine
+    if(digitalRead(keyPin)){enterHits++; players = (getEncoderValue()%11); while(digitalRead(keyPin)){} }
+  }//Q1
 
-  MAX7219_displayLetter(1, index, charSet[num%charSetSize]);
-  MAX7219_displayTime(2, count);
-  MAX7219_displayTime(3, num*num);
-  MAX7219_displayNumber(4, buttonHits);
+  MAX7219_clearDisplay();
 
-  if(digitalRead(keyPin)){
+  //Q2 - Spielernamen Eingeben
+  while(buttonHits < (8*players) && enterHits ==1){
+
+    num = getEncoderValue();
+
+    MAX7219_displayLetter(1, index, charSet[num%charSetSize]);
+    MAX7219_displayString(3,stringPLAYEr,6);
+    MAX7219_displayNumber(4, (buttonHits/8)+1);
+
+
+    if(digitalRead(keyPin)){
+
       buttonHits++;
 
-      if (buttonHits <= 8){player1[index] = charSet[num%charSetSize];}
-      if (buttonHits > 8 && buttonHits <= 16){player2[index] = charSet[num%charSetSize];}
+      if (buttonHits <= 8){player0[index] = charSet[num%charSetSize];}
+      if (buttonHits > 8 && buttonHits <= 16){player1[index] = charSet[num%charSetSize];}
+      if (buttonHits > 16 && buttonHits <= 24){player2[index] = charSet[num%charSetSize];}
+      if (buttonHits > 24 && buttonHits <= 32){player3[index] = charSet[num%charSetSize];}
+      if (buttonHits > 32 && buttonHits <= 40){player4[index] = charSet[num%charSetSize];}
+      if (buttonHits > 40 && buttonHits <= 48){player5[index] = charSet[num%charSetSize];}
+      if (buttonHits > 48 && buttonHits <= 56){player6[index] = charSet[num%charSetSize];}
+      if (buttonHits > 56 && buttonHits <= 64){player7[index] = charSet[num%charSetSize];}
+      if (buttonHits > 64 && buttonHits <= 72){player8[index] = charSet[num%charSetSize];}
+      if (buttonHits > 72 && buttonHits <= 80){player9[index] = charSet[num%charSetSize];}
 
       index = (index + 1);
       if(index >= 8){index = 0; MAX7219_clearDisplaySingle(1);}
 
       while(digitalRead(keyPin)){}
+    }
+
+    if (buttonHits == (8*players)) {
+      enterHits++;
+      buttonHits = 0;
+      MAX7219_displayLetter(2,4,P);
+    }
+}//Q2
+
+MAX7219_clearDisplay();
+
+//Q3 - Spielüberblick
+while (enterHits==2) {
+
+  //ButtonHit Standard Routine
+  if(digitalRead(keyPin)){enterHits++; while(digitalRead(keyPin)){} }
+
+  MAX7219_displayString(4, stringREADY, 5);
+  MAX7219_displayTime(1,dailyBest);
+
+  switch (getEncoderValue()%players){
+    case 0: MAX7219_displayString(2, player0, 8); MAX7219_displayTime(3,best0); break;
+    case 1: MAX7219_displayString(2, player1, 8); MAX7219_displayTime(3,best1); break;
+    case 2: MAX7219_displayString(2, player2, 8); MAX7219_displayTime(3,best2); break;
+    case 3: MAX7219_displayString(2, player3, 8); MAX7219_displayTime(3,best3); break;
+    case 4: MAX7219_displayString(2, player4, 8); MAX7219_displayTime(3,best4); break;
+    case 5: MAX7219_displayString(2, player5, 8); MAX7219_displayTime(3,best5); break;
+    case 6: MAX7219_displayString(2, player6, 8); MAX7219_displayTime(3,best6); break;
+    case 7: MAX7219_displayString(2, player7, 8); MAX7219_displayTime(3,best7); break;
+    case 8: MAX7219_displayString(2, player8, 8); MAX7219_displayTime(3,best8); break;
+    case 9: MAX7219_displayString(2, player9, 8); MAX7219_displayTime(3,best9); break;
+    default: break;
   }
-}//Phase1
 
-MAX7219_clearDisplay();//Kompletten Bildschirm resetten, zwischen den Phasen
+}//Q3
 
-//Phase 2 zeige Namen auf Bildschirm 2
-while(buttonHits >= 16 && buttonHits < 20){
-
-num = getEncoderValue();
-
-//ButtonHit Standard Routine
-if(digitalRead(keyPin)){buttonHits++; while(digitalRead(keyPin)){} }
-
-MAX7219_displayNumber(4, buttonHits);
-
-if((num%2) != 0){MAX7219_displayString(2, player1, 8); }
-else{MAX7219_displayString(2, player2, 8); }
-
-}//Phase2
-
-MAX7219_clearDisplay();//Kompletten Bildschirm resetten, zwischen den Phasen
-
-while(buttonHits >= 20)
-{
-num = getEncoderValue();
-//ButtonHit Standard Routine
-if(digitalRead(keyPin)){buttonHits++; while(digitalRead(keyPin)){} }
-
-MAX7219_displayNumber(1, buttonHits);
-MAX7219_displayTime(2, millis());
-
-MAX7219_displayString(3, stringHALLO, 5);
-MAX7219_displayString(4, stringFLO, 3);
+//Q4 - Zeitmessung pro SPieler
 
 
-if(buttonHits >= 22){buttonHits=0;}
-}
-
-MAX7219_clearDisplay();//Kompletten Bildschirm resetten, zwischen den Phasen
 
 
-}
+}//Loop
